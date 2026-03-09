@@ -77,7 +77,7 @@ router.get('/my/cars', verifyToken, asyncHandler(async (req, res) => {
 }));
 
 // --- [GET] جلب كل السيارات المعروضة للبيع ---
-router.get('/all', asyncHandler(async (req, res) => {
+router.get('/all-for-sale', asyncHandler(async (req, res) => {
     const cars = await Caruser.find().sort({ createdAt: -1 });
     res.status(200).json(cars);
 }));
