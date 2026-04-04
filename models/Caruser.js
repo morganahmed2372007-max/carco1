@@ -8,7 +8,7 @@ const caruserSchema = new mongoose.Schema({
   type: { type: String, enum: ['Sale', 'Rent'], required: true },
   status: { type: String },
   kilometers: { type: Number },
-  addedDate: { type: Date },
+  addedDate: { type: Date, default: Date.now },
   factoryCondition: { type: String },
   doors: { type: Number },
   modification: { type: String },
@@ -19,6 +19,9 @@ const caruserSchema = new mongoose.Schema({
   year: { type: Number },
   color: { type: String },
   features: { type: [String] },
+  // نظام الموافقة (جديد)
+  isApproved: { type: Boolean, default: false }, 
+  // بيانات المالك
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   ownerName: { type: String, required: true },
   ownerPhone: { type: String, required: true },
