@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const asyncHandler = require('express-async-handler');
 const Caruser = require('../models/Caruser');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken,verifyTokenAndAdmin } = require('../middleware/auth');
 const cloudinary = require('cloudinary').v2;
 
 // إعداد multer لتخزين الصور في الذاكرة المؤقتة (RAM)
@@ -90,13 +90,20 @@ router.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 // --- [DELETE] حذف سيارة ---
+// نستخدم verifyToken فقط للسماح لكل المستخدمين المسجلين بالدخول
 router.delete('/:id', verifyToken, asyncHandler(async (req, res) => {
     const car = await Caruser.findById(req.params.id);
     
     if (!car) return res.status(404).json({ message: "السيارة غير موجودة" });
 
-    // التأكد إن اللي بيحذف هو صاحب السيارة
-    if (car.owner.toString() !== req.user.id) {
+    // التحقق: هل المستخدم هو صاحب السيارة؟
+    const isOwner = car.owner.toString() === req.user.id;
+    
+    // التحقق: هل المستخدم هو أدمن؟
+    const isAdmin = req.user.role === 'admin';
+
+    // لو الشخص مش صاحب العربية "وكمان" مش أدمن.. ارفض الطلب
+    if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: "غير مسموح لك بحذف هذه السيارة" });
     }
 
