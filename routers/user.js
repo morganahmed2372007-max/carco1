@@ -6,35 +6,7 @@ const jwt = require('jsonwebtoken');
 const { verifyToken, verifyTokenAndAdmin } = require('../middleware/auth');
 
 /**
- * @desc    تسجيل مستخدم جديد
- * @route   POST /api/users/register
- */
-router.post(
-  '/register',
-  asyncHandler(async (req, res) => {
-    const { fullName, email, password } = req.body;
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ message: 'البيانات ناقصة' });
-    }
-
-    const exists = await User.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ message: 'هذا البريد مسجل بالفعل' });
-    }
-
-    const user = new User({ fullName, email, password });
-    await user.save();
-
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '8d' });
-    const { password: _, ...userResponse } = user.toObject();
-
-    res.status(201).json({ user: userResponse, token });
-  })
-);
-
-/**
- * @desc    تسجيل دخول
- * @route   POST /api/users/login
+ * @desc    تسجيل دخول (مع التحقق من الحظر)
  */
 router.post(
   '/login',
@@ -46,6 +18,11 @@ router.post(
       return res.status(401).json({ message: 'بيانات الدخول غير صحيحة' });
     }
 
+    // 🛑 منع المستخدم من الدخول إذا كان محظوراً
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'عذراً، هذا الحساب محظور حالياً من قبل الإدارة' });
+    }
+
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '8d' });
     const { password: _, ...userResponse } = user.toObject();
 
@@ -55,8 +32,6 @@ router.post(
 
 /**
  * @desc    جلب كل المستخدمين
- * @route   GET /api/users
- * @access  Private (Admin Only)
  */
 router.get(
   '/',
@@ -68,12 +43,11 @@ router.get(
 );
 
 /**
- * @desc    حذف مستخدم
- * @route   DELETE /api/users/:id
- * @access  Private (Admin Only)
+ * @desc    حظر أو إلغاء حظر مستخدم (Toggle Block)
+ * @route   PATCH /api/users/block/:id
  */
-router.delete(
-  '/:id',
+router.patch(
+  '/block/:id',
   verifyTokenAndAdmin,
   asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
@@ -82,13 +56,20 @@ router.delete(
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
-    // نصيحة: منع الأدمن من حذف حسابه الشخصي
+    // منع الأدمن من حظر نفسه
     if (req.user.id === req.params.id) {
-      return res.status(400).json({ message: 'لا يمكنك حذف حسابك الشخصي' });
+      return res.status(400).json({ message: 'لا يمكنك حظر حسابك الشخصي' });
     }
 
-    await User.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
+    // تبديل حالة الحظر
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: user.isBlocked ? 'تم حظر المستخدم بنجاح' : 'تم إلغاء حظر المستخدم بنجاح',
+      isBlocked: user.isBlocked 
+    });
   })
 );
 
