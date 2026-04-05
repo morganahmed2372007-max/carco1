@@ -12,10 +12,10 @@ const { verifyToken, verifyTokenAndAdmin } = require('../middleware/auth');
 router.post(
   '/register',
   asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+    const { fullName, email, password } = req.body; // غير name لـ fullName
 
     // 1. التأكد من إدخال جميع الحقول المطلوبة
-    if (!name || !email || !password) {
+    if (!fullName || !email || !password) {
       return res.status(400).json({ message: 'يرجى إدخال جميع الحقول: الاسم، البريد، وكلمة المرور' });
     }
 
@@ -27,7 +27,7 @@ router.post(
 
     // 3. إنشاء المستخدم (تأكد أن الـ Model يقوم بتشفير الباسورد تلقائياً)
     const user = await User.create({
-      name,
+      fullName,
       email,
       password,
     });
