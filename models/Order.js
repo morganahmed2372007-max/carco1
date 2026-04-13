@@ -20,7 +20,10 @@ const orderSchema = new mongoose.Schema({
     default: 'pending' 
   },
   
- 
+  payment: {
+    method: { type: String, required: true },
+    notes: { type: String }
+  },
   
   statusHistory: {
     type: [
