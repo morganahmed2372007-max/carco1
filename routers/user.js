@@ -75,7 +75,8 @@ router.post(
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
       process.env.JWT_SECRET || 'secret', 
-      { expiresIn: '8d' }
+     // 365 يوم (سنة كاملة)
+{ expiresIn: '365d' }
     );
 
     const { password: _, ...userResponse } = user.toObject();
