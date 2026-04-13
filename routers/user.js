@@ -37,7 +37,7 @@ router.post(
       const token = jwt.sign(
         { id: user._id, role: user.role },
         process.env.JWT_SECRET || 'secret',
-        { expiresIn: '8d' }
+        { expiresIn: '365d' }
       );
 
       // 5. إرسال البيانات بدون كلمة المرور
